@@ -55,7 +55,7 @@ def resultText(contours_count, frame):
 
 def main():
     try:
-        path = r"C:\Users\Forlin\Ovoflow\resources\eggsVideo.mp4"
+        path = r"/Image-Processing-Project/resources/eggsVideo.mp4"
     except:
         print("Please enter a valid path")
         return
