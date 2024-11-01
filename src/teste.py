@@ -4,10 +4,8 @@ import sys
 
 contours_count = 0
 
-
 def n(x):
     pass
-
 
 def findCountrsInImage(frameImg, showImage, frame):
     contours, hierarchy = cv2.findContours(
@@ -52,24 +50,14 @@ def findCountrsInImage(frameImg, showImage, frame):
             ellipse = cv2.fitEllipse(contour)
             cv2.ellipse(showImage, ellipse, (0, 255, 0), 3)
 
-    # cv2.namedWindow("approx", cv2.WINDOW_NORMAL)
-    # cv2.imshow("approx", bg)
     return contours_count
-
 
 def resultText(contours_count, frame):
     cv2.putText(frame, f'Count of eggs: {contours_count}', (0, 50), cv2.FONT_HERSHEY_SIMPLEX, .8, (0, 255, 0), 1,
                 cv2.LINE_AA)
 
-
 def main():
-    try:
-        path = r"C:\Users\Forlin\Ovoflow\resources\eggsVideo.mp4"
-    except:
-        print("Please enter a valid path")
-        return
-
-    cap = cv2.VideoCapture(path)  # ../resources/eggsVideo.mp4
+    cap = cv2.VideoCapture(0)  # Usa a câmera padrão (0)
 
     cv2.namedWindow("Mask Settings")
     cv2.resizeWindow("Mask Settings", 500, 250)
@@ -88,8 +76,6 @@ def main():
     cv2.createTrackbar("Upper-S", "Mask Settings", 0, 255, n)
     cv2.createTrackbar("Upper-V", "Mask Settings", 0, 255, n)
 
-    # ##################################################################################
-
     cv2.setTrackbarPos("Thresh-Min", "Threshold Settings", 221)
     cv2.setTrackbarPos("Thresh-Max", "Threshold Settings", 255)
 
@@ -103,18 +89,14 @@ def main():
 
     while True:
         ret, frame = cap.read()
-        frame = cv2.resize(frame, (300, 450))
-
-        roi = frame[0:, 0:80]
-
-        if ret == 0:
+        if not ret:
             break
+
+        frame = cv2.resize(frame, (300, 450))
+        roi = frame[0:, 0:80]
 
         frameGray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         frameBlurred = cv2.medianBlur(frameGray, 13)
-
-        thresholdImg = frameBlurred.copy()
-        edges = cv2.Canny(thresholdImg, 100, 200)
 
         tmin = cv2.getTrackbarPos("Thresh-Min", "Threshold Settings")
         tmax = cv2.getTrackbarPos("Thresh-Max", "Threshold Settings")
@@ -130,7 +112,6 @@ def main():
         upper_b = np.array([uh, us, uv])
 
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-
         mask = cv2.inRange(hsv, lowerb=lower_b, upperb=upper_b)
 
         bitwise_and = cv2.bitwise_and(roi, roi, mask=mask)
@@ -138,8 +119,7 @@ def main():
 
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (14, 14))
         morphClose = cv2.morphologyEx(mask, cv2.MORPH_RECT, kernel)
-        _, thresholdImg = cv2.threshold(
-            morphClose, tmin, tmax, cv2.THRESH_BINARY)
+        _, thresholdImg = cv2.threshold(morphClose, tmin, tmax, cv2.THRESH_BINARY)
 
         contours_count = findCountrsInImage(thresholdImg, roi, frame)
 
@@ -148,26 +128,9 @@ def main():
 
         roi = cv2.resize(roi, (50, 400))
 
-        cv2.namedWindow("final", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("thresh", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("roi", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("blurred", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("edges", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("bitwise_and", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("mask", cv2.WINDOW_NORMAL)
-        # cv2.namedWindow("masked eggs", cv2.WINDOW_NORMAL)
-        #
         cv2.imshow("final", frame)
-        # cv2.imshow("thresh", thresholdImg)
-        # cv2.imshow("blurred", frameBlurred)
-        # cv2.imshow("edges", edges)
-        # cv2.imshow("bitwise_and", bitwise_and)
-        # cv2.imshow("mask", mask)
-        # cv2.imshow("masked eggs", maskedEggs)
-        # cv2.imshow("roi", roi)
 
         key = cv2.waitKey(30)
-
         if key == ord('q'):
             break
         if key == ord('p'):
@@ -175,7 +138,6 @@ def main():
 
     cap.release()
     cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     main()
