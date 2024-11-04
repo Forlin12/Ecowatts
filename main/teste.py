@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import sys
 
 contours_count = 0
 
@@ -22,12 +21,12 @@ def findCountrsInImage(frameImg, showImage, frame):
 
     for contour, hier in zip(contours, hierarchy):
         (x, y, w, h) = cv2.boundingRect(contour)
-        if x > 65 and x < 70:
+        if 65 < x < 70:
             contours_count += 1
 
     resultText(contours_count, frame)
 
-    for i in range(0, len(contours)):
+    for i in range(len(contours)):
         contour = contours[i]
         hull.append(cv2.convexHull(contour, False))
         area = cv2.contourArea(contour)
@@ -36,12 +35,13 @@ def findCountrsInImage(frameImg, showImage, frame):
         area_max = 1000
 
         color = (255, 0, 255)
-        if (area_min < area < area_max):
+        if area_min < area < area_max:
             M = cv2.moments(contour)
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
 
-            cv2.circle(showImage, (cX, cY), 5, color, -1)
+                cv2.circle(showImage, (cX, cY), 5, color, -1)
 
             epsilon = 0.01 * cv2.arcLength(contour, True)
             approx = cv2.approxPolyDP(contour, epsilon, True)
@@ -57,7 +57,11 @@ def resultText(contours_count, frame):
                 cv2.LINE_AA)
 
 def main():
-    cap = cv2.VideoCapture(0)  # Usa a câmera padrão (0)
+    cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)  # Altera o backend para DirectShow
+
+    if not cap.isOpened():
+        print("Erro: Não foi possível acessar a câmera.")
+        return
 
     cv2.namedWindow("Mask Settings")
     cv2.resizeWindow("Mask Settings", 500, 250)
@@ -90,10 +94,11 @@ def main():
     while True:
         ret, frame = cap.read()
         if not ret:
+            print("Erro: Falha ao capturar o quadro.")
             break
 
-        frame = cv2.resize(frame, (300, 450))
-        roi = frame[0:, 0:80]
+        frame = cv2.resize(frame, (640, 480))
+        roi = frame[:, :80]
 
         frameGray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         frameBlurred = cv2.medianBlur(frameGray, 13)
@@ -112,7 +117,7 @@ def main():
         upper_b = np.array([uh, us, uv])
 
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-        mask = cv2.inRange(hsv, lowerb=lower_b, upperb=upper_b)
+        mask = cv2.inRange(hsv, lower_b, upper_b)
 
         bitwise_and = cv2.bitwise_and(roi, roi, mask=mask)
         maskedEggs = bitwise_and.copy()
